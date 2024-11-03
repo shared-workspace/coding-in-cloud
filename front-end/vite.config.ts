@@ -6,7 +6,7 @@ import vue from '@vitejs/plugin-vue'
 // import nightwatchPlugin from 'vite-plugin-nightwatch'
 // import vueDevTools from 'vite-plugin-vue-devtools'
 import injectPlugin from '@rollup/plugin-inject';
-
+import UnoCSS from 'unocss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -16,7 +16,8 @@ export default defineConfig({
     // vueDevTools(),
     injectPlugin({
       $fetch: [fileURLToPath(new URL('./src/utils/axios-fetch.ts', import.meta.url)), 'default'],
-    })
+    }),
+    UnoCSS(),
   ],
   resolve: {
     alias: {
