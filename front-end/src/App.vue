@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import LoadingScreen from './components/LoadingScreen.vue';
 // import HelloWorld from './components/HelloWorld.vue'
 </script>
 
@@ -24,6 +25,7 @@ import { RouterView } from 'vue-router'
   </header> -->
 
   <RouterView />
+  <LoadingScreen />
 </template>
 
 <style scoped>

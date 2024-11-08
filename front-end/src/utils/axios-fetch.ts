@@ -122,7 +122,7 @@ async function fetchFromApi<R extends Route>(route: R, request: RouteValue<R>['r
     } as unknown as (RouteValue<R>['response'] & { data: any })
   } catch (err: any) {
     console.error('$fetch error', err)
-    return undefined
+    return null
   }
 }
 const $fetch = fetchFromApi

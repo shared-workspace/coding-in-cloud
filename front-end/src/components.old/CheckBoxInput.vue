@@ -90,7 +90,7 @@ const removeOption = (option: string) => {
         @click="() => selectOption(option)"
         >{{ option }}</span
         >
-        <span class="bg-red flex justify-center items-center w-5 h-5 rounded-full text-sm translate-y-3" @click="() => removeOption(option)">X</span>
+        <span class="bg-red flex justify-center items-center w-5 h-5 rounded-full text-sm translate-y-3 z-0 cursor-pointer" @click="() => removeOption(option)">X</span>
       </label>
   </div>
 </template>

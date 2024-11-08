@@ -1,10 +1,23 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CompanyModule } from './company/company.module';
+import { CategoryModule } from './category/category.module';
+import { FeatureModule } from './feature/feature.module';
+import { ImageGroupModule } from './image-group/image-group.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    MongooseModule.forRoot(process.env.MONGODB_URI),
+    CompanyModule,
+    CategoryModule,
+    FeatureModule,
+    ImageGroupModule, // Use the environment variable
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

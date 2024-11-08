@@ -1,11 +1,28 @@
+<!-- eslint-disable vue/no-mutating-props -->
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
-defineProps<{
-  msg: string
+import { computed, onMounted } from 'vue';
+
+const props = defineProps<{
+  msg: string,
+  count: number,
 }>()
+const emits = defineEmits<{
+  'update:count': [value: number],
+  'update:msg': [value: string],
+}>()
+const localCount = computed({
+  get: () => props.count,
+  set: (value: number) => emits('update:count', value),
+})
+onMounted(() => {
+  console.log('mounted')
+})
 </script>
 
 <template>
   <div class="greetings">
+    <!-- <input type="text" v-model="msg" /> -->
     <h1 class="green">{{ msg }}</h1>
     <h3>
       You’ve successfully created a project with
@@ -13,6 +30,7 @@ defineProps<{
       <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>.
       What's next?
     </h3>
+    <button @click="localCount++">count is: {{ localCount }}</button>
   </div>
 </template>
 

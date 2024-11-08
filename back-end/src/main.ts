@@ -5,17 +5,33 @@ import { join } from 'path';
 import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-function resolveRef(ref: string, document: any): any {
-  if (!ref) return null;
-  const refPath = ref.replace(/^#\//, '').split('/');
-  let schema = document;
-  refPath.forEach((part) => {
-    schema = schema[part];
-  });
-  return schema;
-}
-
 export async function generateRoutesTypeFile(app: INestApplication) {
+  const resolveRef = (ref: string, document: any) => {
+    if (!ref) return null;
+    const refPath = ref.replace(/^#\//, '').split('/');
+    let schema = document;
+    refPath.forEach((part) => {
+      schema = schema[part];
+    });
+    return schema;
+  };
+
+  const generateType = (schema: any) => {
+    if (!schema) return 'any';
+    if (schema.$ref) {
+      return generateType(resolveRef(schema.$ref, document));
+    } else if (schema.type === 'array') {
+      return `Array<${generateType(schema.items)}>`;
+    } else if (schema.type === 'object') {
+      const properties = Object.keys(schema.properties)
+        .map((key) => `${key}:${generateType(schema.properties[key])}`)
+        .join(',');
+      return `{${properties}}`;
+    } else {
+      return schema.type || 'any';
+    }
+  };
+
   const config = new DocumentBuilder()
     .setTitle('My API')
     .setDescription('API documentation')
@@ -37,98 +53,70 @@ export async function generateRoutesTypeFile(app: INestApplication) {
     mkdirSync(dirPath, { recursive: true });
   }
 
-  const API_ROUTE_TYPE_DEFINITION = {};
-  routes.forEach((route) => {
-    const path = Object.keys(route)[0];
-    const methods = route[path];
-    const query = {};
-    const params = {};
-    const body = {};
-    const response = {};
-    const from = {};
-    Object.keys(methods).forEach((method) => {
-      const { operationId, parameters, responses } = methods[method];
-      const f = operationId.split('_');
-      from[f[0]] = f[1];
-
-      // for Request
-      parameters.forEach((param) => {
-        // console.log(JSON.stringify(param, null, 2));
-        const { name, in: location, schema } = param;
-        if (location === 'query') {
-          query[name] = schema.type;
-        } else if (location === 'path') {
-          params[name] = schema.type;
-        } else if (location === 'body') {
-          body[name] = schema.type;
-        }
-      });
-
-      // for Response
-      const statusCodeKeys = Object.keys(responses);
-      statusCodeKeys.forEach((statusCode) => {
-        const { content, schema } = responses[statusCode];
-        if (content) {
-          const schemaType = content['application/json']?.schema?.type;
-          const resOfstatusCode = {};
-          if (schemaType) {
-            if (schemaType === 'object' && schema && schema.properties) {
-              const properties = schema.properties;
-              Object.keys(properties).forEach((property) => {
-                resOfstatusCode[property] = properties[property].type;
-              });
-            } else {
-              console.log(schemaType);
-              resOfstatusCode[statusCode] = schemaType;
-            }
-          } else {
-            const $ref = content['application/json']?.schema?.$ref;
-            const resolvedSchema = resolveRef($ref, document);
-            const { properties } = resolvedSchema;
-            Object.keys(properties).forEach((property) => {
-              resOfstatusCode[property] = properties[property].type;
-            });
-          }
-          response[statusCode] = resOfstatusCode;
-        }
-      });
-    });
-    API_ROUTE_TYPE_DEFINITION[path] = {
-      from,
-      request: {
-        query,
-        params,
-        body,
-      },
-      response,
-    };
-  });
-  // console.log(JSON.stringify(routes, null, 2));
-
   writeFileSync(
     filePath,
     `/* eslint-disable @typescript-eslint/no-empty-object-type */
-declare type API_ROUTE_TYPE_DEFINITION = ${JSON.stringify(
-      API_ROUTE_TYPE_DEFINITION,
-      null,
-      2,
-    )
-      .replace(/:\s+"(string|number)"/g, ': $1')
-      .replace(/"([^"]+)":\s+\{\}/g, '"$1"?: {}')};`,
+declare type API_ROUTE_TYPE_DEFINITION = {${routes
+      .map((route) => {
+        const path = Object.keys(route)[0];
+        const methods = route[path];
+        const query = [];
+        const params = [];
+        const body = [];
+        const response = [];
+        const from = [];
+        Object.keys(methods).forEach((method) => {
+          const { operationId, parameters, responses } = methods[method];
+          const f = operationId.split('_');
+          from.push(`"${f[0]}":"${f[1]}"`);
+
+          // for Request
+          parameters.forEach((param) => {
+            const { name, in: location, schema } = param;
+            if (location === 'query') {
+              query.push(`"${name}":${schema.type}`);
+            } else if (location === 'path') {
+              params.push(`"${name}":${schema.type}`);
+            } else if (location === 'body') {
+              body.push(`"${name}":${schema.type}`);
+            }
+          });
+
+          // for Response
+          const statusCodeKeys = Object.keys(responses);
+          statusCodeKeys.forEach((statusCode) => {
+            const { content } = responses[statusCode];
+            if (content) {
+              response.push(
+                `${statusCode}:${generateType(
+                  content['application/json']?.schema,
+                )}`,
+              );
+            }
+          });
+        });
+        return `'${path}':{from:{${from.join(',')}},request:{query:{${query.join(',')}},params:{${params.join(',')}},body:{${body.join(',')}},},response:{${response.join(',')}},}`;
+      })
+      .join(',')}};`.replace(
+      /"([^"]+)":\{\}|(\w+):\{\}/g,
+      (match, p1, p2) => `"${p1 || p2}"?:{}`,
+    ),
   );
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
   app.setGlobalPrefix('api'); // Set global prefix
   app.enableCors({
-    origin: 'https://refactored-meme-wpv7797rvxxc746-5173.app.github.dev', // Replace with your frontend origin
+    origin: 'https://fantastic-umbrella-pq6rgvjgqj6cjqj-5173.app.github.dev', // Replace with your frontend origin
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Allow credentials such as cookies
     allowedHeaders: 'Content-Type, Authorization', // Specify headers that are allowed
   }); // Enable CORS
 
-  generateRoutesTypeFile(app);
+  if (process.env.NODE_ENV !== 'production') {
+    generateRoutesTypeFile(app);
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }
