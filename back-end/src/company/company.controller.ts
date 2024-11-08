@@ -17,17 +17,17 @@ export class CompanyController {
     return await this.companyService.createCompany(company);
   }
 
-  @Delete()
-  @ApiOkResponse({ type: ResponseDtoCompany })
-  async deleteCompany(@Body() company: RequestDtoDeleteCompany) {
-    console.log('company', company);
-    return await this.companyService.deleteCompany(company._id);
-  }
-
   @Put()
   @ApiOkResponse({ type: ResponseDtoCompany })
   async updateCompany(@Body() company: RequestDtoUpdateCompany) {
     console.log('company', company);
     return await this.companyService.updateCompany(company._id, company);
+  }
+
+  @Delete()
+  @ApiOkResponse({ type: ResponseDtoCompany })
+  async deleteCompany(@Body() company: RequestDtoDeleteCompany) {
+    console.log('company', company);
+    return await this.companyService.deleteCompany(company._id);
   }
 }

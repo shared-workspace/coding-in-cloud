@@ -8,7 +8,7 @@ import { ImageGroup } from 'src/image-group/schema/image-group.schema';
 @Schema()
 export class Company extends Document {
   @ApiProperty()
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true, index: true })
   name: string;
 
   @ApiProperty()

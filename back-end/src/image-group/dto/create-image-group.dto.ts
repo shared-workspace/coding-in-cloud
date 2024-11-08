@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Image } from '../schema/image-group.schema';
-import { ArrayNotEmpty } from 'class-validator';
+import { ArrayNotEmpty, IsNotEmpty } from 'class-validator';
 
 export class RequestDtoCreateImageGroup {
   @ApiProperty()
@@ -9,4 +9,15 @@ export class RequestDtoCreateImageGroup {
   @ApiProperty()
   @ArrayNotEmpty({ message: 'Images array must not be empty' })
   images: Image[];
+
+  @ApiProperty()
+  @IsNotEmpty()
+  company: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  feature: string;
+
+  @ApiProperty()
+  filter: string;
 }

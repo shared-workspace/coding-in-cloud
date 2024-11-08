@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 @Schema()
 export class Feature extends Document {
   @ApiProperty()
-  @Prop({ required: true, type: String })
+  @Prop({ required: true, type: String, unique: true, index: true })
   name: string;
 
   @ApiProperty()
