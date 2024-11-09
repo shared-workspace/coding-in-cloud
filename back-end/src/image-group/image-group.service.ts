@@ -1,9 +1,8 @@
-import { Injectable, UsePipes } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ImageGroup } from './schema/image-group.schema';
 import { Feature } from 'src/feature/schema/feature.schema';
-import { ValidateFilterPipe } from 'src/feature/pipe/validate-filter.pipe';
 
 @Injectable()
 export class ImageGroupService {
@@ -14,8 +13,14 @@ export class ImageGroupService {
     private readonly featureModel: Model<Feature>,
   ) {}
 
-  @UsePipes(ValidateFilterPipe)
   async createImageGroup(data: any) {
+    const { feature, filter } = data;
+    if (filter) {
+      const res = await this.featureModel.findOne({ name: feature });
+      if (!res || !res.filters.includes(filter)) {
+        throw new BadRequestException('Invalid filter');
+      }
+    }
     const res = await this.imageGroupModel.create(data);
     if (res && res._id) {
       return {

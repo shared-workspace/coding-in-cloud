@@ -10,41 +10,19 @@ export class FeatureService {
     private readonly featureModel: Model<Feature>,
   ) {}
 
+  async getFeatures() {
+    return await this.featureModel.find();
+  }
+
   async createFeature(name: string) {
-    const res = await this.featureModel.create({ name });
-    if (res && res._id) {
-      return {
-        success: true,
-        message: 'Feature created successfully',
-        data: res,
-      };
-    } else {
-      return { success: false, message: 'Feature not created' };
-    }
+    return await this.featureModel.create({ name });
   }
 
   async updateFeature(_id: any, filters: string[]) {
-    const res = await this.featureModel.updateOne({ _id }, { filters });
-    if (res.acknowledged) {
-      return {
-        success: true,
-        message: 'Feature updated successfully',
-        data: res,
-      };
-    } else {
-      return { success: false, message: 'Feature not updated' };
-    }
+    return await this.featureModel.updateOne({ _id }, { filters });
   }
 
   async deleteFeature(_id: any) {
-    const res = await this.featureModel.deleteOne({ _id });
-    if (res.acknowledged && res.deletedCount) {
-      return {
-        success: true,
-        message: 'Feature deleted successfully',
-      };
-    } else {
-      return { success: false, message: 'Feature not deleted' };
-    }
+    return (await this.featureModel.deleteOne({ _id })).acknowledged;
   }
 }

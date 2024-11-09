@@ -11,34 +11,17 @@ export class Company extends Document {
   @Prop({ required: true, unique: true, index: true })
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: [Category] })
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Category' }], default: [] })
-  category: Category[];
+  categories: Category[];
 
-  @ApiProperty()
+  @ApiProperty({ type: [Feature] })
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Feature' }], default: [] })
-  feature: Feature[];
+  features: Feature[];
 
-  @ApiProperty()
+  @ApiProperty({ type: [ImageGroup] })
   @Prop({ type: [{ type: Types.ObjectId, ref: 'ImageGroup' }], default: [] })
-  imageGroup: ImageGroup[];
+  imageGroups: ImageGroup[];
 }
 
 export const CompanySchema = SchemaFactory.createForClass(Company);
-
-export class ResponseDtoCompany {
-  @ApiProperty()
-  success: boolean;
-
-  @ApiProperty()
-  message: string;
-
-  @ApiProperty({ type: Company })
-  data: {
-    _id: string;
-    name: string;
-    category: string[];
-    feature: string[];
-    imageGroup: string[];
-  };
-}

@@ -10,41 +10,19 @@ export class CompanyService {
     private readonly companyModel: Model<Company>,
   ) {}
 
-  async createCompany(company: any) {
-    const res = await this.companyModel.create(company);
-    if (res && res._id) {
-      return {
-        success: true,
-        message: 'Company created successfully',
-        data: res,
-      };
-    } else {
-      return { success: false, message: 'Company not created' };
-    }
+  async getCompanies() {
+    return await this.companyModel.find().populate('categories features');
   }
 
-  async deleteCompany(_id: any) {
-    const res = await this.companyModel.deleteOne({ _id });
-    if (res.acknowledged && res.deletedCount) {
-      return {
-        success: true,
-        message: 'Company deleted successfully',
-      };
-    } else {
-      return { success: false, message: 'Company not deleted' };
-    }
+  async createCompany(company: any) {
+    return await this.companyModel.create(company);
   }
 
   async updateCompany(_id: any, data: any) {
-    const res = await this.companyModel.updateOne({ _id }, data);
-    if (res.acknowledged) {
-      return {
-        success: true,
-        message: 'Company updated successfully',
-        data: res,
-      };
-    } else {
-      return { success: false, message: 'Company not updated' };
-    }
+    return await this.companyModel.updateOne({ _id }, data);
+  }
+
+  async deleteCompany(_id: any) {
+    return (await this.companyModel.deleteOne({ _id })).deletedCount;
   }
 }

@@ -2,8 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
 import { Document, Types } from 'mongoose';
-import { Company } from 'src/company/schema/company.schema';
-import { Feature } from 'src/feature/schema/feature.schema';
 
 export class Image {
   @ApiProperty()
@@ -23,19 +21,29 @@ export class Image {
   size: number;
 }
 
+class CompanyName {
+  @ApiProperty()
+  name: string;
+}
+
+class FeatureName {
+  @ApiProperty()
+  name: string;
+}
+
 @Schema()
 export class ImageGroup extends Document {
   @ApiProperty()
   @Prop({ default: '' })
   name: string;
 
-  @ApiProperty({ type: Company })
+  @ApiProperty({ type: CompanyName })
   @Prop({ type: Types.ObjectId, ref: 'Company', required: true })
-  company: Company;
+  company: FeatureName;
 
-  @ApiProperty({ type: Feature })
+  @ApiProperty({ type: FeatureName })
   @Prop({ type: { type: Types.ObjectId, ref: 'Feature' } })
-  feature: Feature;
+  feature: FeatureName;
 
   @ApiProperty()
   @Prop({ type: String })

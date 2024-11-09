@@ -15,7 +15,7 @@ import { ImageGroupModule } from './image-group/image-group.module';
     CompanyModule,
     CategoryModule,
     FeatureModule,
-    ImageGroupModule, // Use the environment variable
+    ImageGroupModule,
   ],
   controllers: [],
   providers: [],

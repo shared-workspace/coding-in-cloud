@@ -10,28 +10,15 @@ export class CategoryService {
     private readonly categoryModel: Model<Category>,
   ) {}
 
+  async getCategories() {
+    return await this.categoryModel.find();
+  }
+
   async createCategory(name: string) {
-    const res = await this.categoryModel.create({ name });
-    if (res && res._id) {
-      return {
-        success: true,
-        message: 'Category created successfully',
-        data: res,
-      };
-    } else {
-      return { success: false, message: 'Category not created' };
-    }
+    return await this.categoryModel.create({ name });
   }
 
   async deleteCategory(_id: any) {
-    const res = await this.categoryModel.deleteOne({ _id });
-    if (res.acknowledged && res.deletedCount) {
-      return {
-        success: true,
-        message: 'Category deleted successfully',
-      };
-    } else {
-      return { success: false, message: 'Category not deleted' };
-    }
+    return (await this.categoryModel.deleteOne({ _id })).acknowledged;
   }
 }
