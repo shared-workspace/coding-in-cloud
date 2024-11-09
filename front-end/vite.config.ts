@@ -15,7 +15,8 @@ export default defineConfig({
     // nightwatchPlugin(),
     // vueDevTools(),
     injectPlugin({
-      $fetch: [fileURLToPath(new URL('./src/utils/axios-fetch.ts', import.meta.url)), 'default'],
+      // $fetch: [fileURLToPath(new URL('./src/utils/axios-fetch.ts', import.meta.url)), 'default'],
+      $http: [fileURLToPath(new URL('./src/utils/axios-http.ts', import.meta.url)), 'default'],
     }),
     UnoCSS(),
   ],

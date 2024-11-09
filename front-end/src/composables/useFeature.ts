@@ -3,29 +3,30 @@ import { useLoading } from './useLoading'
 const { setLoading } = useLoading()
 
 export interface Feature {
+  _id: string
   name: string
   filters: string[]
 }
 
-const dummyFilters = Array.from({ length: 10 }, (_, i) => 'Filter ' + i)
+// const dummyFilters = Array.from({ length: 10 }, (_, i) => 'Filter ' + i)
 
-const dummyFeatures: Feature[] = Array.from({ length: 10 }, (_, i) => ({
-  name: 'Feature ' + i,
-  filters: Array.from(
-    { length: 5 },
-    (_, j) =>
-      dummyFilters[Math.floor(Math.random() * dummyFilters.length)] + ' ' + j,
-  ),
-}))
+// const dummyFeatures: Feature[] = Array.from({ length: 10 }, (_, i) => ({
+//   name: 'Feature ' + i,
+//   filters: Array.from(
+//     { length: 5 },
+//     (_, j) =>
+//       dummyFilters[Math.floor(Math.random() * dummyFilters.length)] + ' ' + j,
+//   ),
+// }))
 
-export function randomFeature(n: number) {
-  const index = Array.from({ length: dummyFeatures.length }, (_, i) => i)
-  const features = Array.from({ length: n }, () => {
-    const i = Math.floor(Math.random() * index.length)
-    return dummyFeatures[index.splice(i, 1)[0]]
-  })
-  return features
-}
+// export function randomFeature(n: number) {
+//   const index = Array.from({ length: dummyFeatures.length }, (_, i) => i)
+//   const features = Array.from({ length: n }, () => {
+//     const i = Math.floor(Math.random() * index.length)
+//     return dummyFeatures[index.splice(i, 1)[0]]
+//   })
+//   return features
+// }
 
 export interface FeatureEntity {
   used: boolean
@@ -40,17 +41,17 @@ const hasNoFilter = ref(false)
 
 async function fetchFeatureOptions() {
   setLoading(true, 'Fetching Features')
-  const options = await new Promise<Feature[]>(resolve =>
-    setTimeout(() => resolve(dummyFeatures), 2000),
-  )
-  featureOptions.value = options
-  featureEntries.clear()
-  options.forEach(({ name, filters }) => {
-    featureEntries.set(name, {
-      used: false,
-      filters: new Map(filters.map(filter => [filter, false])),
+  const res = await $http.get<Feature[]>('/api/feature/all').then(res => res.data)
+  if (res && res.length) {
+    featureOptions.value = res
+    featureEntries.clear()
+    featureOptions.value.forEach(({ name, filters }) => {
+      featureEntries.set(name, {
+        used: false,
+        filters: new Map(filters.map(filter => [filter, false])),
+      })
     })
-  })
+  }
   setLoading(false, '')
 }
 await fetchFeatureOptions()
@@ -66,9 +67,9 @@ export function initFeatureEntries(features: string[]) {
 
 async function createFeature(name: string, callback: () => void) {
   setLoading(true, 'Creating Feature')
-  const newFeature = await new Promise<Feature>(resolve =>
-    setTimeout(() => resolve({ name, filters: [] }), 2000),
-  )
+  const res = await $http.post<Feature>('/api/feature', { name }).then(res => res.data)
+  if (!res) return { success: false }
+  const newFeature = res
   featureOptions.value = [...featureOptions.value, newFeature]
   featureEntries.set(newFeature.name, { used: false, filters: new Map() })
   callback()
@@ -113,13 +114,15 @@ async function deleteFilter(callback = () => {}) {
       setLoading(true, 'Deleting Filter')
       const activeFeature = featureEntries.get(featureEntriySelected.value)
       if (activeFeature) {
-        const updatedFilters = await new Promise<Map<string, boolean>>(
-          resolve =>
-            setTimeout(() => {
-              activeFeature.filters.delete(filter)
-              resolve(activeFeature.filters)
-            }, 2_000),
-        )
+          const id = featureOptions.value.find(({ name }) => name === featureEntriySelected.value)?._id
+          if (!id) {
+            console.error('Something unexpected happened while deleting a filter parent feature not found')
+            return { success: false }
+          }
+        const updatedFilters = await $http.put<string[]>('/api/feature/' + id, { filter }).then(res => {
+          if (!res.data.includes(filter)) activeFeature.filters.delete(filter)
+            return activeFeature.filters
+        })
         const updatedEntry = { used: true, filters: updatedFilters }
         featureEntries.set(featureEntriySelected.value, updatedEntry)
         // also update the featureOptions
@@ -186,7 +189,7 @@ export function useFeature() {
     createFeature,
     createFilter,
     toggleDontUseFilter() {
-      return hasNoFilter.value = !hasNoFilter.value
+      return (hasNoFilter.value = !hasNoFilter.value)
     },
     filterUsed: computed({
       get: () => filterUsing.value || '',

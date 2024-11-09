@@ -126,5 +126,5 @@ axiosInstance.interceptors.request.use(
 //   }
 // }
 // const $fetch = fetchFromApi
-const $fetch = axiosInstance
-export default $fetch
+const $http = axiosInstance
+export default $http

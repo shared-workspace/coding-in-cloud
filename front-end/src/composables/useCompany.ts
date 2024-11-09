@@ -1,25 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   initCategoryChoices,
-  randomCategory,
+  // randomCategory,
   type Category,
 } from './useCategory'
 import { computed, ref, watch } from 'vue'
 
 import { useLoading } from './useLoading'
-import { initFeatureEntries, randomFeature, type Feature } from './useFeature'
+import { initFeatureEntries, type Feature } from './useFeature'
 const { setLoading } = useLoading()
 
 interface Company {
   name: string
   categories: Category[]
   features: Feature[]
+  imageGroups: any[]
 }
-
-const dummyCompanies: Company[] = Array.from({ length: 10 }, (_, i) => ({
-  name: 'Company ' + i,
-  categories: randomCategory(3),
-  features: randomFeature(5),
-}))
 
 const companiesOptions = ref<Company[]>([])
 const companySelected = ref<Company | null>(null)
@@ -36,28 +32,17 @@ watch(
 
 async function fetchCompanyOptions() {
   setLoading(true, 'Fetching Companies')
-  const options = await new Promise<Company[]>(resolve => {
-    setTimeout(() => {
-      resolve(dummyCompanies)
-    }, 3_000)
-  })
-  companiesOptions.value = options
+  const res = await $http.get<Company[]>('/api/company/all').then(res => res.data)
+  if (res && res.length) companiesOptions.value = res;
   setLoading(false, '')
 }
 await fetchCompanyOptions()
 
 async function createCompany(name: string) {
   setLoading(true, 'Creating Company')
-  const newCompany = await new Promise<Company>(resolve => {
-    setTimeout(() => {
-      resolve({
-        name,
-        categories: [],
-        features: [],
-      })
-    }, 3_000)
-  })
-  companiesOptions.value.push(newCompany)
+  const res = await $http.post<Company>('/api/company', { name }).then(res => res.data)
+  if (!res) return { success: false }
+  companiesOptions.value.push(res)
   initCategoryChoices([])
   initFeatureEntries([])
   setLoading(false, '')
@@ -67,7 +52,15 @@ async function createCompany(name: string) {
 async function deleteCompany(callback = () => {}) {
   if (companySelected.value) {
     setLoading(true, 'Deleting Company')
-    await new Promise<void>(resolve => setTimeout(resolve, 2_000))
+    setLoading(true, 'Deleting Company')
+    console.log('companySelected.value', companySelected.value)
+    const c = companySelected.value as any;
+    console.log('c, c_id', c, c._id)
+    const res = await $http
+      .delete('/api/company/' + c._id)
+      .then(res => res.data)
+      console.log('res', res)
+    if (res !== 1) return { success: false }
     companiesOptions.value = companiesOptions.value.filter(
       company => company.name !== companySelected.value?.name,
     )
@@ -81,7 +74,10 @@ async function deleteCompany(callback = () => {}) {
   return { success: false }
 }
 
-async function updateCompanyCategories(categories: string[], callback: () => void) {
+async function updateCompanyCategories(
+  categories: string[],
+  callback: () => void,
+) {
   if (companySelected.value) {
     companySelected.value.categories = categories.map(name => ({ name }))
     setLoading(true, 'Updating Company Categories')
