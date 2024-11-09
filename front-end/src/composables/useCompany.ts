@@ -11,6 +11,7 @@ import { initFeatureEntries, type Feature } from './useFeature'
 const { setLoading } = useLoading()
 
 interface Company {
+  _id?: string
   name: string
   categories: Category[]
   features: Feature[]
@@ -52,14 +53,14 @@ async function createCompany(name: string) {
 async function deleteCompany(callback = () => {}) {
   if (companySelected.value) {
     setLoading(true, 'Deleting Company')
-    setLoading(true, 'Deleting Company')
-    console.log('companySelected.value', companySelected.value)
-    const c = companySelected.value as any;
-    console.log('c, c_id', c, c._id)
+    const id = companySelected.value._id
+    if (!id) {
+      console.error('Something unexpected happened company id not found')
+      return { success: false }
+    }
     const res = await $http
-      .delete('/api/company/' + c._id)
-      .then(res => res.data)
-      console.log('res', res)
+      .delete('/api/company/' + id)
+      .then(res => res.data).catch(err => (console.error(err), null))
     if (res !== 1) return { success: false }
     companiesOptions.value = companiesOptions.value.filter(
       company => company.name !== companySelected.value?.name,
@@ -75,17 +76,35 @@ async function deleteCompany(callback = () => {}) {
 }
 
 async function updateCompanyCategories(
-  categories: string[],
+  categories: Category[],
   callback: () => void,
 ) {
   if (companySelected.value) {
-    companySelected.value.categories = categories.map(name => ({ name }))
+    const id = companySelected.value._id
+    if (!id) {
+      console.error('Something unexpected happened company id not found')
+      return { success: false, message: 'Selected company id found' }
+    }
+    const categoriesIds = categories.map(category => category._id)
     setLoading(true, 'Updating Company Categories')
-    await new Promise<void>(resolve => setTimeout(resolve, 2_000))
+    const res = await $http
+      .put<Category[]>('/api/company/', { _id: id, categories: categoriesIds })
+      .then(res => res.data)
+    if (!res) return { success: false, message: 'Something went wrong' }
+    const i = companiesOptions.value.findIndex(
+      company => company._id === id,
+    )
+    companiesOptions.value = [
+      ...companiesOptions.value.slice(0, i),
+      { ...companiesOptions.value[i], categories: res },
+      ...companiesOptions.value.slice(i + 1),
+    ]
+    companySelected.value = companiesOptions.value[i]
     callback()
     setLoading(false, '')
   } else {
     console.error('Something unexpected happened company not found')
+    return { success: false, message: 'Selected company not found' }
   }
 }
 

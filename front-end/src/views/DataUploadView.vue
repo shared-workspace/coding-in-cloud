@@ -9,14 +9,11 @@ import { useFeature } from '../composables/useFeature'
 import ImageGroupInput from '../components/ImageGroupInput.vue'
 
 const { companies, selectedCompany, createCompany, updateCompanyCategories, deleteCompany } = useCompany()
-const { categories, createCategory, selectedCategories, categoriesUpdateRequire } = useCategory()
+const { categories, createCategory, deleteCategory, toggleCategoryChoice, resetUpdatedCategories, updatedCategories } = useCategory()
 const { featureSelectedEntry, deselectFeatureEntry, filters, createFilter, filterUsed, deleteFilter, toggleDontUseFilter  } = useFeature()
 const saveNewCompanyCategories = async () => {
-  const list = selectedCategories();
-  if (list.length > 0) {
-    await updateCompanyCategories(list, () => categoriesUpdateRequire.value = false);
-  } else {
-    console.log('No category selected');
+  if (updatedCategories.value.length > 0) {
+    await updateCompanyCategories(updatedCategories.value, resetUpdatedCategories);
   }
 }
 </script>
@@ -36,7 +33,9 @@ const saveNewCompanyCategories = async () => {
       v-model:choices="categories"
       :create="createCategory"
       :save="saveNewCompanyCategories"
-      :update-required="categoriesUpdateRequire"
+      :updated-choices="updatedCategories"
+      :toggle-choice="toggleCategoryChoice"
+      :delete="deleteCategory"
     />
     <FeatureTable v-if="selectedCompany !== ''" />
   </div>

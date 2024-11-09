@@ -5,7 +5,7 @@ import { useLoading } from './useLoading'
 const { setLoading } = useLoading()
 
 export interface Category {
-  // _id: Types.ObjectId
+  _id?: string
   name: string
 }
 
@@ -23,14 +23,17 @@ export interface Category {
 // }
 
 const categoryOptions = ref<Category[]>([])
+// Map is used to show selected and unselected categories
 const categoryChoices = ref<Map<string, boolean>>(new Map())
 const categoriesUpdateRequire = ref(false)
+// bellows are used to track changes in categories for database update
+const categoriesChoicesUpdated = ref<Category[]>([])
 
 async function fetchCategoryOptions() {
   setLoading(true, 'Fetching Categories')
   const res = await $http
     .get<Category[]>('/api/category/all')
-    .then(res => res.data)
+    .then(res => res.data).catch(err => (console.error(err), null))
   if (res && res.length) {
     categoryOptions.value = res
     categoryChoices.value = new Map(
@@ -46,11 +49,12 @@ export function initCategoryChoices(categories: string[]) {
     updatedChoices.set(key, categories.includes(key)),
   )
   categoryChoices.value = updatedChoices
+  categoriesChoicesUpdated.value = []
 }
 
 async function createCategory(name: string) {
   setLoading(true, 'Creating Category')
-  const res = await $http.post<Category>('/api/category', { name }).then(res => res.data)
+  const res = await $http.post<Category>('/api/category', { name }).then(res => res.data).catch(err => (console.error(err), null))
   if (!res) return { success: false, message: 'Category not created' }
   const newCategory = res;
   categoryOptions.value = [...categoryOptions.value, newCategory]
@@ -61,10 +65,32 @@ async function createCategory(name: string) {
   return { success: true, message: 'Category created' }
 }
 
+async function deleteCategory(name: string) {
+  setLoading(true, 'Deleting Category')
+  const id = categoryOptions.value.find(category => category.name === name)?._id
+  if (!id) {
+    console.error('Something Unexpected Happened Category ID not found')
+    return { success: false, message: 'Category not deleted' }
+  }
+  const res = await $http.delete<number>(`/api/category/${id}`).then(res => res.data).catch(err => (console.error(err), null))
+  if (!res && res !== 1) return { success: false, message: 'Category not deleted' }
+  categoryOptions.value = categoryOptions.value.filter(category => category.name !== name)
+  const newMap = new Map(categoryChoices.value)
+  newMap.delete(name)
+  categoryChoices.value = newMap
+  setLoading(false, '')
+  return { success: true, message: 'Category deleted' }
+}
+
+// return array of ids of selected categories
 function selectedCategories(): string[] {
-  return Array.from(categoryChoices.value)
+  const categoriesMap = categoryChoices.value
+  const categories = categoryOptions.value
+  const categoriesId = Array.from(categoriesMap)
     .filter(([_, value]) => value)
-    .map(([key]) => key)
+    .map(([key]) => categories.find(category => category.name === key)?._id)
+    .filter(id => id)
+  return categoriesId as string[]
 }
 
 // MARK: - Category Fetch
@@ -89,5 +115,20 @@ export function useCategory() {
     createCategory,
     categoriesUpdateRequire,
     selectedCategories,
+    deleteCategory,
+    updatedCategories: computed(() => categoriesChoicesUpdated.value),
+    toggleCategoryChoice(name: string) {
+      // if category is in the list, remove it
+      if (categoriesChoicesUpdated.value.find(category => category.name === name)) {
+        categoriesChoicesUpdated.value = categoriesChoicesUpdated.value.filter(
+          category => category.name !== name,
+        )
+      } else {
+        // if category is not in the list, add it
+        const category = categoryOptions.value.find(category => category.name === name)
+        if (category) categoriesChoicesUpdated.value = [...categoriesChoicesUpdated.value, category]
+      }        
+    },
+    resetUpdatedCategories: () => categoriesChoicesUpdated.value = [],
   }
 }
